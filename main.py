@@ -40,6 +40,9 @@ class Tetris:
         self.novo_bloco()
         self.velocidade = 1
         self.game_over = False
+        self.menu_ativo = True
+        self.opcoes = ["Iniciar Jogo", "Configurações", "Créditos", "Sair"]
+        self.opcao_selecionada = 0
 
     def novo_bloco(self):
         self.peca_atual = self.criar_peca()
@@ -92,6 +95,33 @@ class Tetris:
         pygame.draw.rect(self.tela, BRANCO, (posx, posy - TAM_BLOCO, TAM_BLOCO, TAM_BLOCO), 1)
         pygame.draw.rect(self.tela, cor, (posx, posy, TAM_BLOCO, TAM_BLOCO))
 
+    def desenhar_menu(self):
+        for i, opcao in enumerate(self.opcoes):
+            if i == self.opcao_selecionada:
+                cor = AMARELO
+            else:
+                cor = BRANCO
+            texto = pygame.font.Font(None, 36).render(opcao, True, cor)
+            pos_x = (LARG_TELA- texto.get_width()) // 2
+            pos_y = (ALTURA_TELA // 2) + i * 50
+            self.tela.blit(texto, (pos_x, pos_y))
+
+    def desenhar_tela(self):
+        self.desenhar_blocos()
+        for i, linha in enumerate(self.peca_atual):
+            for j, bloco in enumerate(linha):
+                if bloco == 1:
+                    pygame.draw.rect(
+                        self.tela,
+                        self.cor_da_peca,
+                        (
+                            (self.posicao_x + j) * TAM_BLOCO,
+                            (self.posicao_y + i) * TAM_BLOCO,
+                            TAM_BLOCO,
+                            TAM_BLOCO,
+                        ),
+                    )
+
     def limpar_tela(self):
         self.tela.fill(PRETO)
 
@@ -100,14 +130,30 @@ class Tetris:
             if event.type == pygame.QUIT:
                 self.game_over = True
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    self.move_left()
-                elif event.key == pygame.K_RIGHT:
-                    self.move_right()
-                elif event.key == pygame.K_DOWN:
-                    self.move_down()
-                elif event.key == pygame.K_SPACE:
-                    self.peca_atual = self.rotacionar_peca()
+                if self.menu_ativo:
+                    if event.key == pygame.K_UP:
+                        self.opcao_selecionada = (
+                                                         self.opcao_selecionada - 1
+                                                 ) % len(self.opcoes)
+                    elif event.key == pygame.K_DOWN:
+                        self.opcao_selecionada = (
+                                                         self.opcao_selecionada + 1
+                                                 ) % len(self.opcoes)
+                    elif event.key == pygame.K_RETURN:
+                        if self.opcoes[
+                            self.opcao_selecionada] == "Iniciar Jogo":
+                            self.menu_ativo = False
+                        elif self.opcoes[self.opcao_selecionada] == "Sair":
+                            self.game_over = True
+                else:
+                    if event.key == pygame.K_LEFT:
+                        self.move_left()
+                    elif event.key == pygame.K_RIGHT:
+                        self.move_right()
+                    elif event.key == pygame.K_DOWN:
+                        self.move_down()
+                    elif event.key == pygame.K_SPACE:
+                        self.peca_atual = self.rotacionar_peca()
 
     def move_down(self):
         if self.esta_dentro(self.posicao_x, self.posicao_y + 1, self.peca_atual):
@@ -155,9 +201,15 @@ class Tetris:
         while not self.game_over:
             self.limpar_tela()
             self.tratar_eventos()
-            self.remover_linhas()
-            self.desenhar_tela()
-            self.atualizar()
+            if self.menu_ativo:
+                self.desenhar_menu()
+            else:
+                self.atualizar()
+                self.desenhar_tela()
+
+                self.remover_linhas()
+                # self.desenhar_tela()
+                # self.atualizar()
             pygame.display.update()
             self.clock.tick(FPS)
         pygame.quit()
