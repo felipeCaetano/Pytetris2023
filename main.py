@@ -2,150 +2,151 @@ import random
 
 import pygame
 
-from colors import (PRETO, BRANCO, VERMELHO, AZUL, VERDE, AMARELO, CIANO, ROXO,
+from colors import (BLACK, WHITE, VERMELHO, AZUL, VERDE, YELLOW, CIANO, ROXO,
                     LARANJA)
 from configs import (
-    LARG_TELA, ALTURA_TELA, TAM_BLOCO, LARG_TABULEIRO,
-    ALTURA_TABULEIRO, POSICAO_INI, FPS, LARG_TAB
+    SCR_WIDTH, SCR_HEIGHT, LEN_BLOCK, BOARD_WIDTH,
+    BOARD_HEIGHT, INIT_POS, FPS, WIDTH_TAB
 )
-from pecas import PECAS
+from pecas import PIECES
 
-cores_blocos = [VERMELHO, AZUL, VERDE, AMARELO, CIANO, ROXO, LARANJA]
+cores_blocos = [VERMELHO, AZUL, VERDE, YELLOW, CIANO, ROXO, LARANJA]
 
 
 class Tetris:
     def __init__(self):
         self.counter = 0
         pygame.init()
-        self.posicao_y = None
-        self.posicao_x = None
-        self.cor_da_peca = None
-        self.peca_atual = None
+        self.pos_y = None
+        self.pos_x = None
+        self.color_piece = None
+        self.cur_piece = None
         self.game_over = False
-        self.menu_ativo = True
-        self.velocidade = 1
-        self.opcao = 0
+        self.menu_atv = True
+        self.speed = 1
+        self.option = 0
         self.score = 0
         self.high_score = 0
-        self.opcoes = ["Iniciar Jogo", "Configurações", "Créditos", "Sair"]
-        self.temporizador = pygame.time.get_ticks()
+        self.options = ["Iniciar Jogo", "Configurações", "Créditos", "Sair"]
+        self.timer = pygame.time.get_ticks()
         self.clock = pygame.time.Clock()
-        self.tela = pygame.display.set_mode((LARG_TELA, ALTURA_TELA))
-        self.area_jogo = pygame.Surface.subsurface(
-            self.tela, [0, 0, LARG_TAB, ALTURA_TELA - 2 * TAM_BLOCO])
-        self.tabuleiro = [[PRETO] * LARG_TABULEIRO for _ in range(ALTURA_TABULEIRO)]
-        self.novo_bloco()
+        self.screen = pygame.display.set_mode((SCR_WIDTH, SCR_HEIGHT))
+        self.area = pygame.Surface.subsurface(
+            self.screen, [0, 0, WIDTH_TAB, SCR_HEIGHT - 2 * LEN_BLOCK])
+        self.board = [[BLACK] * BOARD_WIDTH for _ in range(BOARD_HEIGHT)]
+        self.new_block()
         pygame.display.set_caption("PyTetris")
 
-    def novo_bloco(self):
-        self.peca_atual = self.criar_peca()
-        self.cor_da_peca = random.choice(cores_blocos)
-        self.posicao_x = POSICAO_INI
-        self.posicao_y = 0
+    def new_block(self):
+        self.cur_piece = self.create_piece()
+        self.color_piece = random.choice(cores_blocos)
+        self.pos_x = INIT_POS
+        self.pos_y = 0
 
     @staticmethod
-    def criar_peca():
-        return random.choice(PECAS)
+    def create_piece():
+        return random.choice(PIECES)
 
-    def esta_dentro(self, pos_x, pos_y, peca):
-        tabuleiro = self.tabuleiro
-        for i, linha in enumerate(peca):
+    def in_bounds(self, pos_x, pos_y, piece):
+        board = self.board
+        for i, line in enumerate(piece):
             y = pos_y + i
-            if y >= ALTURA_TABULEIRO:
+            if y >= BOARD_HEIGHT:
                 return False
-            for j, bloco in enumerate(linha):
+            for j, block in enumerate(line):
                 x = pos_x + j
-                if not (0 <= x < LARG_TABULEIRO):
+                if not (0 <= x < BOARD_WIDTH):
                     return False
-                if bloco == 1 and tabuleiro[y][x] != PRETO:
+                if block == 1 and board[y][x] != BLACK:
                     return False
         return True
 
-    def atualizar_matriz(self, pos_x, pos_y):
-        for i, linha in enumerate(self.peca_atual):
-            for j, bloco in enumerate(linha):
-                if bloco == 1 and pos_y + i >= 0:
-                    self.tabuleiro[pos_y + i][pos_x + j] = self.cor_da_peca
+    def update_board(self, pos_x, pos_y):
+        for i, line in enumerate(self.cur_piece):
+            for j, block in enumerate(line):
+                if block == 1 and pos_y + i >= 0:
+                    self.board[pos_y + i][pos_x + j] = self.color_piece
 
-    def rotacionar_peca(self):
-        nova_peca = list(zip(*reversed(self.peca_atual)))
-        if not self.esta_dentro(self.posicao_x, self.posicao_y, nova_peca):
-            return self.peca_atual
-        return nova_peca
+    def rotate_piece(self):
+        new_piece = list(zip(*reversed(self.cur_piece)))
+        if not self.in_bounds(self.pos_x, self.pos_y, new_piece):
+            return self.cur_piece
+        return new_piece
 
-    def remover_linhas(self):
-        linhas_removidas = []
-        for index, linha in enumerate(self.tabuleiro):
-            if all(cor_bloco != PRETO for cor_bloco in linha):
-                linhas_removidas.append(index)
-        for linha in linhas_removidas:
-            del self.tabuleiro[linha]
-            self.score += len(self.tabuleiro[linha])
-            self.tabuleiro.insert(0, [PRETO] * LARG_TABULEIRO)
+    def remove_lines(self):
+        lines_removed = []
+        for index, line in enumerate(self.board):
+            if all(clock_color != BLACK for clock_color in line):
+                lines_removed.append(index)
+        for line in lines_removed:
+            self.score += len(self.board[line])
+            del self.board[line]
+            self.board.insert(0, [BLACK] * BOARD_WIDTH)
 
-    def desenhar_blocos(self):
-        for i in range(ALTURA_TABULEIRO):
-            for j in range(LARG_TABULEIRO):
-                cor = self.tabuleiro[i][j]
-                self.desenhar_bloco(j * TAM_BLOCO, i * TAM_BLOCO, cor)
+    def draw_blocks(self):
+        for i in range(BOARD_HEIGHT):
+            for j in range(BOARD_WIDTH):
+                cor = self.board[i][j]
+                self.draw_block(j * LEN_BLOCK, i * LEN_BLOCK, cor)
 
-    def desenhar_bloco(self, posx, posy, cor):
+    def draw_block(self, posx, posy, cor):
         # self.draw_grid(posx, posy)
         pygame.draw.rect(
-            self.area_jogo, cor, (posx, posy, TAM_BLOCO, TAM_BLOCO))
+            self.area, cor, (posx, posy, LEN_BLOCK, LEN_BLOCK))
 
     def draw_grid(self):
-        for i in range(ALTURA_TABULEIRO):
-            for j in range(LARG_TABULEIRO):
+        for i in range(BOARD_HEIGHT):
+            for j in range(BOARD_WIDTH):
                 pygame.draw.rect(
-                    self.area_jogo, BRANCO,
-                    (j*TAM_BLOCO, i*TAM_BLOCO, TAM_BLOCO, TAM_BLOCO), 1)
+                    self.area,
+                    WHITE,
+                    (j * LEN_BLOCK, i * LEN_BLOCK, LEN_BLOCK, LEN_BLOCK), 1
+                )
 
-    def desenhar_menu(self):
-        for i, opcao in enumerate(self.opcoes):
-            if i == self.opcao:
-                cor = AMARELO
+    def draw_menu(self):
+        for i, op in enumerate(self.options):
+            if i == self.option:
+                cor = YELLOW
             else:
-                cor = BRANCO
-            texto = pygame.font.Font(None, 36).render(opcao, True, cor)
-            pos_x = (LARG_TELA - texto.get_width()) // 2
-            pos_y = (ALTURA_TELA // 2) + i * 50
-            self.tela.blit(texto, (pos_x, pos_y))
+                cor = WHITE
+            text = pygame.font.Font(None, 36).render(op, True, cor)
+            pos_x = (SCR_WIDTH - text.get_width()) // 2
+            pos_y = (SCR_HEIGHT // 2) + i * 50
+            self.screen.blit(text, (pos_x, pos_y))
 
-    def desenhar_tela(self):
-        self.desenhar_blocos()
+    def draw_screen(self):
+        self.draw_blocks()
         # self.draw_grid()
-        for i, linha in enumerate(self.peca_atual):
-            for j, bloco in enumerate(linha):
-                if bloco == 1:
+        for i, line in enumerate(self.cur_piece):
+            for j, block in enumerate(line):
+                if block == 1:
                     pygame.draw.rect(
-                        self.area_jogo,
-                        self.cor_da_peca,
+                        self.area,
+                        self.color_piece,
                         (
-                            (self.posicao_x + j) * TAM_BLOCO,
-                            (self.posicao_y + i) * TAM_BLOCO,
-                            TAM_BLOCO,
-                            TAM_BLOCO,
-                        ),
+                            (self.pos_x + j) * LEN_BLOCK,
+                            (self.pos_y + i) * LEN_BLOCK,
+                            LEN_BLOCK,
+                            LEN_BLOCK),
                     )
 
-    def limpar_tela(self):
-        self.tela.fill(PRETO)
+    def clear_scr(self):
+        self.screen.fill(BLACK)
 
-    def tratar_eventos(self):
+    def event_handler(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.game_over = True
             elif event.type == pygame.KEYDOWN:
-                if self.menu_ativo:
+                if self.menu_atv:
                     if event.key == pygame.K_UP:
-                        self.opcao = (self.opcao - 1) % len(self.opcoes)
+                        self.option = (self.option - 1) % len(self.options)
                     elif event.key == pygame.K_DOWN:
-                        self.opcao = (self.opcao + 1) % len(self.opcoes)
+                        self.option = (self.option + 1) % len(self.options)
                     elif event.key == pygame.K_RETURN:
-                        if self.opcoes[self.opcao] == "Iniciar Jogo":
-                            self.menu_ativo = False
-                        elif self.opcoes[self.opcao] == "Sair":
+                        if self.options[self.option] == "Iniciar Jogo":
+                            self.menu_atv = False
+                        elif self.options[self.option] == "Sair":
                             self.game_over = True
                 else:
                     if event.key == pygame.K_LEFT:
@@ -155,53 +156,47 @@ class Tetris:
                     elif event.key == pygame.K_DOWN:
                         self.move_down()
                     elif event.key == pygame.K_SPACE:
-                        self.peca_atual = self.rotacionar_peca()
+                        self.cur_piece = self.rotate_piece()
 
     def move_down(self):
-        if self.esta_dentro(self.posicao_x, self.posicao_y + 1,
-                            self.peca_atual):
-            self.posicao_y += 1
+        if self.in_bounds(self.pos_x, self.pos_y + 1, self.cur_piece):
+            self.pos_y += 1
 
     def move_right(self):
-        if self.posicao_x < LARG_TABULEIRO - len(self.peca_atual[0]) \
-                and self.esta_dentro(self.posicao_x + 1, self.posicao_y,
-                                     self.peca_atual):
-            self.posicao_x += 1
+        if self.pos_x < BOARD_WIDTH - len(self.cur_piece[0]) \
+                and self.in_bounds(self.pos_x + 1, self.pos_y, self.cur_piece):
+            self.pos_x += 1
 
     def move_left(self):
-        if self.posicao_x > 0 and self.esta_dentro(self.posicao_x - 1,
-                                                   self.posicao_y,
-                                                   self.peca_atual):
-            self.posicao_x -= 1
+        if self.pos_x > 0 and self.in_bounds(
+                self.pos_x - 1, self.pos_y, self.cur_piece):
+            self.pos_x -= 1
 
     def atualizar(self):
-        if pygame.time.get_ticks() - self.temporizador > 500 // self.velocidade:
-            if self.esta_dentro(
-                    self.posicao_x, self.posicao_y + 1, self.peca_atual):
-                self.posicao_y += 1
+        if pygame.time.get_ticks() - self.timer > 500 // self.speed:
+            if self.in_bounds(self.pos_x, self.pos_y + 1, self.cur_piece):
+                self.pos_y += 1
             else:
-                self.atualizar_matriz(self.posicao_x, self.posicao_y)
-                self.novo_bloco()
-                # self.draw_grid()
-                if not self.esta_dentro(
-                        self.posicao_x, self.posicao_y, self.peca_atual):
+                self.update_board(self.pos_x, self.pos_y)
+                self.new_block()
+                if not self.in_bounds(self.pos_x, self.pos_y, self.cur_piece):
                     self.game_over = True
-            self.temporizador = pygame.time.get_ticks()
+            self.timer = pygame.time.get_ticks()
 
-    def rodar(self):
+    def run(self):
         while not self.game_over:
-            self.limpar_tela()
-            self.tratar_eventos()
-            if self.menu_ativo:
-                self.desenhar_menu()
+            self.clear_scr()
+            self.event_handler()
+            if self.menu_atv:
+                self.draw_menu()
             else:
                 self.atualizar()
-                self.desenhar_tela()
+                self.draw_screen()
                 self.draw_grid()
-                self.remover_linhas()
+                self.remove_lines()
             pygame.display.update()
             self.clock.tick(FPS)
         pygame.quit()
 
 
-Tetris().rodar()
+Tetris().run()
