@@ -6,13 +6,13 @@ pygame.init()
 info = pygame.display.Info()
 
 # Obter largura e altura da tela
-largura_tela = info.current_w
-altura_tela = info.current_h
-
-LARG_TELA = 600
-ALTURA_TELA = info.current_h - 20
-TAM_BLOCO = 30
+scr_width = info.current_w
+scr_height = info.current_h
+LEN_BLOCK = 30
+SCR_WIDTH = 840
+WIDTH_TAB = 600
 FPS = 60
-LARG_TABULEIRO = LARG_TELA // TAM_BLOCO
-ALTURA_TABULEIRO = ALTURA_TELA // TAM_BLOCO
-POSICAO_INI = LARG_TELA // TAM_BLOCO // 2 - 1
+SCR_HEIGHT = scr_height - (scr_height % LEN_BLOCK)
+BOARD_WIDTH = WIDTH_TAB // LEN_BLOCK
+BOARD_HEIGHT = SCR_HEIGHT // LEN_BLOCK - 2
+INIT_POS = WIDTH_TAB // LEN_BLOCK // 2 - 1
